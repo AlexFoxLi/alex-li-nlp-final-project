@@ -1,7 +1,7 @@
 ---
-title: 'Regression Analysis Hate Speech - 2'
+title: 'Regression Analysis Hate Speech - Final Project'
 author: "Zhixian (Alex) Li"
-date: "2024/03/31"
+date: "2024/04/23"
 output:
   word_document:
     toc: yes
@@ -16,7 +16,7 @@ output:
 toc_depth: 3
 ---
 
-# Statistical Analysis
+# Statistical Analysis - Semantic Similarity
 
 We are using regular ANOVA to examine relationship between the groups. Because we have three different score outputs (a semantic similarity score of each group with regard to hate speech, a semantic similarity score of each group with regard to offensive speech, and a semantic similarity score of each group with regard to neither hate/offensive speech), we would run ANOVA analysis with regard to each output variable. Specifically, we would examine a box plot, a summary to show whether the groups are different from each other, a Bonferroni-adjusted pairwise t-test, and a Tukey Honest Significant Differences test that how different the means are for the two groups.
 
@@ -34,12 +34,14 @@ df <- df[complete.cases(df), ] #only complete cases are considered
 
 ## With Regard to Hate Score
 
+Hate score in this case is the semantic similarity score to the hate speech corpus.
+
 ```{r}
 ggboxplot(df, x = "group", y = "hate_score",
           color = "group", palette = c("#00AFBB", "#E7B800", "#FC4E07"))
 ```
 
-Visually speaking, the box plot shows that there is a small difference in semantic similarity scores of hate and offensive groups with regard to a sample hate speech text. On the other hand, there is a significant difference between both hate and offensive tweet as well as a normal tweet when examining semantic similarity scores with regard to sampler hate speech.
+Visually speaking, the box plot shows that there is a small difference in semantic similarity scores of hate and offensive groups with regard to a hate speech corpus. On the other hand, there is a significant difference between both hate and offensive tweet as well as a normal tweet when examining semantic similarity scores with regard to the hate speech corpus.
 
 ```{r}
 # Build the linear model
@@ -60,19 +62,20 @@ This illustrates that under Bonferroni adjustment, the significant differences e
 TukeyHSD(model.h)
 ```
 
+Results from the Tukey comparison test reveals that the difference between offensive speech and hate speech is not really significant when comparing them to a hate speech corpus, given a p-value larger than 0.05 (0.1309420). The estimated mean difference between these two categories is also the smallest across all comparisons.
 
-Results from the Tukey comparison test reveals that the difference between offensive speech and hate speech is not really significant, given a p-value larger than 0.05 (0.1309420). The estimated mean difference between these two categories is also the smallest across all comparisons.
-
-These results illustrate that semantic similarity can correctly identify between not disturbing (neither) tweets and disturbing tweets, but might not be so well-performed in distinguishing between hate and offensive tweets. 
+These results illustrate that semantic similarity analysis with regard to the hate speech corpus can correctly identify between not disturbing (neither) tweets and disturbing tweets, but might not be so well-performed in distinguishing between hate and offensive tweets. 
 
 ## With regard to Offensive Score
+
+Offensive score in this case is the semantic similarity score to the offensive language corpus.
 
 ```{r}
 ggboxplot(df, x = "group", y = "offensive_score",
           color = "group", palette = c("#00AFBB", "#E7B800", "#FC4E07"))
 ```
 
-Generally speaking, the semantic similarity scores of both hate tweets and offensive tweets when compared with a sampler of offensive language are closer to each other than the semantic similarity score of the neither group when compared with a sampler of offensive language. However, there seems to be a relatively significant difference between hate and offensive tweets, with the offensive tweets bearing greater semantic similarity with the offensive sampler than hate speech.
+Generally speaking, the semantic similarity scores of both hate tweets and offensive tweets when compared with the offensive language corpus are closer to each other than the semantic similarity score of the neither group when compared with the offensive language corpus. However, there seems to be a relatively significant difference between hate and offensive tweets, with the offensive tweets bearing greater semantic similarity with the offensive corpus than hate speech.
 
 ```{r}
 # Build the linear model
@@ -95,12 +98,14 @@ When we examine between groups difference through the Tukey HSD test, similar re
 
 ## With regard to Neither Score
 
+Neither score in this case is the semantic similarity score to the corpus containing non-disturbing tweets, i.e. tweets that are neither hate speech nor contain offensive language.
+
 ```{r}
 ggboxplot(df, x = "group", y = "neither_score",
           color = "group", palette = c("#00AFBB", "#E7B800", "#FC4E07"))
 ```
 
-The means of hate and offensive groups' semantic similarity scores see no significant difference between each other, but they seem to be both lower in semantic similarity than the neither group, which shows much greater semantic similarity with the sampler of normal language. This seems to imply a semantic difference between disturbing tweets (hateful/offensive) and normal tweets.
+The means of hate and offensive groups' semantic similarity scores see no significant difference between each other, but they seem to be both lower in semantic similarity than the neither group, which shows much greater semantic similarity with the corpus of normal language. This seems to imply a semantic difference between disturbing tweets (hateful/offensive) and normal tweets when doing a semantic similarity test to the neither corpus.
 
 ```{r}
 # Build the linear model
@@ -119,11 +124,13 @@ The results show that only the difference between offensive and neither groups a
 TukeyHSD(model.n)
 ```
 
-The fact that only the difference between offensive and neither groups is significant reflects itself also in the TukeyHSD test, in which only the adjusted p-value of the offensive-neither pair reveals a statistically significant difference between the two. 
+The fact that only the difference between offensive and neither groups is significant when conducting a semantic similarity test to the neither corpus reflects itself also in the TukeyHSD test, in which only the adjusted p-value of the offensive-neither pair reveals a statistically significant difference between the two. 
 
 ## Kruskal-Wallis rank sum tests
 
-When conducting validity tests, we realize that some of the assumptions could not be fully met. In this case, the Levene test actually passes.
+When conducting validity tests, we realize that some of the assumptions could not be fully met. 
+
+In this case, the Levene test actually passes, showing us that the homogeneity assumption can be met.
 
 ```{r}
 leveneTest(neither_score ~ group, data = df)
@@ -138,7 +145,9 @@ aov_residuals <- residuals(object = model.n)
 shapiro.test(x = aov_residuals)
 ```
 
-Therefore, we decide to run Kruskal-Wallis rank sum test, which is a non-parametric alternative that can be used when those assumptions are not fully met.
+Therefore, we decide to run Kruskal-Wallis rank sum test, which is a non-parametric alternative that can be used when the normality assumption is not met.
+
+### Kruskal-Wallis test with regard to hate score
 
 ```{r}
 model.hk <- kruskal.test(hate_score ~ group, data = df)
@@ -147,12 +156,16 @@ model.hk
 
 Results from the Kruskal-Wallis rank sum test with regard to hate score shows a significant difference between groups in terms of semantic similarity scores, which reinforces the results above.
 
+### Kruskal-Wallis test with regard to offensive score
+
 ```{r}
 model.ok <- kruskal.test(offensive_score ~ group, data = df)
 model.ok
 ```
 
 Similarly, Kruskal-Wallis rank sum test with regard to offensive score also shows a statistically signficant difference between groups in terms of semantic similarity scores, which reinforces the results above.
+
+### Kruskal-Wallis test with regard to neither score
 
 ```{r}
 model.nk <- kruskal.test(neither_score ~ group, data = df)
@@ -161,9 +174,13 @@ model.nk
 
 Lastly, Kruskal-Wallis rank sum test with regard to neither score also shows statistically significant difference between groups in terms of semantic similarity scores, again reinforcing the results above.
 
-Therefore, it is safe for us to conclude that statistically significant differences indeed exists between the three groups in terms of semantic similarity scores, when compared with each type of tweet sampler (hate, offensive, and neither).
+Therefore, it is safe for us to conclude that statistically significant differences indeed exists between the three groups in terms of semantic similarity scores, when compared with each type of tweet corpus (hate, offensive, and neither).
 
-# Sentiment Analysis
+## Summary for Semantic Similarity Analysis
+
+Results from our semantic similarity analysis illustrates that semantic similarity scores with all three corpi (hate, offensive, neither) could provide statistically significant differentiations between at least some of the categories. Amongst these three, both hate and offensive corpi can provide a robust differentiation between disturbing (hate/offensive) tweets, while semantic similarity scores with the neither corpus fail to classify hate speech items from non-hate speech items (offensive/neither) altogether.
+
+# Statistical Analysis - Sentiment Analysis
 
 Now we would do ANOVA tests with regard to our sentiment analysis results. Once again, because we have three groups, we would run ANOVA analysis with regard to each output variable. Specifically, we would examine a box plot, a summary to show whether the groups are different from each other, a Bonferroni-adjusted pairwise t-test, and a Tukey Honest Significant Differences test that how different the means are for the two groups.
 
@@ -191,7 +208,7 @@ model.posk <- kruskal.test(POS ~ group, data = df)
 model.posk
 ```
 
-And indeed, the regression test reveals no statistically significant difference between the three groups. This result is further reflected in both the Bonferroni-adjusted pairwise t-test and the Kruskal-Wallis rank sum test, all of which returns p-values well above 0.05. Therefore, we can safely conclude that positive sentiments are no significant predictors to differentiate between the three categories.
+And indeed, the regression test reveals no statistically significant difference between the three groups in terms of sentiment scores (p-value = 0.791 >> 0.05). This result is further reflected in both the Bonferroni-adjusted pairwise t-test and the Kruskal-Wallis rank sum test, all of which returns p-values well above 0.05. Therefore, we can safely conclude that positive sentiments are no significant predictors to differentiate between the three categories.
 
 Potential reasons might be that our dataset consists of not so joyous tweets, even for the non-disturbing tweets. In fact, tweets were chosen here given the fact they might be disturbing, so something overly joyous and lovely is not going to end up in this dataset. But perhaps the levels of negative sentiments, or the levels of hate as a sentiment, could differentiate between the three categories?
 
@@ -268,3 +285,7 @@ model.angk
 ```
 
 p-value = 0.011981 < 0.05, so difference indeed exists.
+
+## Summary for Sentiment Analysis
+
+Results from our sentiment analysis illustrates that only negative sentiment terms and anger emotion terms could provide statistically significant differentiations between at least some of the categories. Amongst these two, negative sentiment terms can provide a robust differentiation between disturbing (hate/offensive) tweets, while anger emotion items fail to classify hate speech items from non-hate speech items (offensive/neither) altogether.
